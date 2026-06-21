@@ -1,0 +1,322 @@
+@charset "UTF-8";
+
+/* ============================================================
+   BubbleNet — Design System (Seminar 4)
+   Palette, typography, layout grid, components.
+   ============================================================ */
+
+:root {
+  --teal-700: #0F6E56;   /* navbar, primary buttons, active states */
+  --teal-500: #1D9E75;   /* hover, own-bubble ring, sports markers */
+  --teal-50:  #E1F5EE;   /* page background tint, info fills        */
+  --ink:      #1a1a2e;   /* all body text and headings              */
+  --muted:    #6b7280;   /* timestamps, labels, hints               */
+  --surface:  #F4F5F7;   /* card backgrounds, feed panel            */
+
+  /* category colours */
+  --cat-sports:    #1D9E75;
+  --cat-community: #7F77DD;
+  --cat-public:    #D85A30;
+  --cat-transport: #185FA5;
+  --cat-special:   #BA7517;
+
+  --online:  #22c55e;
+  --warning: #f59e0b;
+
+  --navbar-h: 52px;
+  --footer-h: 30px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--teal-50);
+}
+
+h1, h2, h3, h4, h5 { font-family: "Nunito", system-ui, sans-serif; line-height: 1.2; }
+
+/* ---- W3.CSS teal theme overrides (no external theme css needed) ---- */
+.w3-theme        { background-color: var(--teal-700) !important; color: #fff !important; }
+.w3-text-theme   { color: var(--teal-700) !important; }
+.w3-theme-dark   { background-color: #0b5946 !important; color: #fff !important; }
+.w3-button.w3-theme:hover { background-color: var(--teal-500) !important; }
+
+/* ============================================================
+   Navbar
+   ============================================================ */
+#navigation {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--navbar-h);
+  background: var(--teal-700);
+  color: #fff;
+  z-index: 1000;
+  box-shadow: 0 1px 4px rgba(0,0,0,.15);
+}
+#navigation .w3-bar { height: var(--navbar-h); display: flex; align-items: center; }
+#navigation .brand {
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  padding: 0 16px;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#navigation a.w3-button { color: #fff; }
+#navigation a.w3-button:hover { background: var(--teal-500) !important; color: #fff; }
+#navigation .role-badge {
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  background: var(--warning); color: #1a1a2e;
+  padding: 2px 8px; border-radius: 999px; margin-left: 4px;
+}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+#footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--footer-h);
+  line-height: var(--footer-h);
+  background: var(--teal-700);
+  color: #fff;
+  text-align: center;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+/* ============================================================
+   Content area
+   ============================================================ */
+#content { padding-top: var(--navbar-h); }
+
+/* Pages that are not the split-view home scroll normally. */
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px calc(var(--footer-h) + 24px);
+}
+.page-narrow { max-width: 460px; }
+
+/* ============================================================
+   Home: split view (map + feed)
+   ============================================================ */
+.app-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  height: calc(100vh - var(--navbar-h) - var(--footer-h));
+}
+#map { height: 100%; width: 100%; background: #dfe7e3; }
+
+#feedPanel {
+  background: var(--surface);
+  border-left: 1px solid #e2e5ea;
+  overflow-y: auto;
+  height: 100%;
+}
+#feedPanel::-webkit-scrollbar { width: 4px; }
+#feedPanel::-webkit-scrollbar-thumb { background: var(--teal-500); border-radius: 4px; }
+
+/* ============================================================
+   Bubble map markers (Leaflet divIcon)
+   ============================================================ */
+.bubble-marker {
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,.9);
+  box-shadow: 0 1px 4px rgba(0,0,0,.35);
+  font-size: 16px;
+}
+.bubble-marker.mine {
+  animation: pulse-ring 1.8s ease-out infinite;
+}
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(245,158,11,.7); }
+  70%  { box-shadow: 0 0 0 12px rgba(245,158,11,0); }
+  100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+}
+
+/* ============================================================
+   Feed: header, compose, posts
+   ============================================================ */
+.feed-header {
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e2e5ea;
+}
+.feed-header h2 { margin: 0 0 4px; font-size: 18px; color: var(--teal-700); }
+.feed-header .meta { color: var(--muted); font-size: 12px; }
+.cat-chip {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  color: #fff; padding: 2px 8px; border-radius: 999px; margin-right: 6px;
+  text-transform: capitalize; background: var(--cat-community);
+}
+.cat-chip.sports    { background: var(--cat-sports); }
+.cat-chip.community { background: var(--cat-community); }
+.cat-chip.public    { background: var(--cat-public); }
+.cat-chip.transport { background: var(--cat-transport); }
+.cat-chip.special   { background: var(--cat-special); }
+
+.compose {
+  padding: 12px 16px; background: #fff; border-bottom: 1px solid #e2e5ea;
+}
+.compose textarea {
+  width: 100%; resize: vertical; border: 1px solid #d4d8de; border-radius: 8px;
+  padding: 8px; font-family: inherit; font-size: 14px;
+}
+.compose-locked {
+  padding: 12px 16px; background: var(--teal-50); color: var(--muted);
+  border-bottom: 1px solid #e2e5ea; font-size: 13px;
+}
+.compose-locked i { color: var(--teal-700); }
+
+.post {
+  background: #fff;
+  margin: 10px;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border-left: 3px solid transparent;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.post.type-OFFICIAL { border-left-color: var(--cat-transport); }
+.post.type-ALERT    { border-left-color: var(--warning); }
+.post.type-WARNING  { border-left-color: #dc2626; }
+
+.post .avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--teal-500); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; object-fit: cover; vertical-align: middle;
+}
+.post .author { font-family: "Nunito", sans-serif; font-weight: 700; }
+.post .time   { color: var(--muted); font-size: 12px; }
+.post .body   { margin: 8px 0; }
+.post .badge  { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+.badge.OFFICIAL { background: #e6effa; color: var(--cat-transport); }
+.badge.ALERT    { background: #fef3e2; color: #b45309; }
+.badge.WARNING  { background: #fdecec; color: #dc2626; }
+
+.post .actions { display: flex; gap: 14px; align-items: center; color: var(--muted); }
+.post .actions a { color: var(--muted); text-decoration: none; cursor: pointer; font-size: 13px; }
+.post .actions a:hover { color: var(--teal-700); }
+.post .likeBtn.liked { color: var(--teal-500); font-weight: 700; }
+
+.replyDrawer { margin-top: 10px; border-top: 1px solid #eef0f3; padding-top: 8px; }
+.commentInput { width: 100%; border: 1px solid #d4d8de; border-radius: 8px; padding: 6px 8px; font-family: inherit; }
+.comment {
+  display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f2f4;
+}
+.comment:last-child { border-bottom: none; }
+.comment .c-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--cat-community); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex: 0 0 auto; object-fit: cover; }
+.comment .c-author { font-weight: 700; font-size: 13px; }
+.comment .c-time { color: var(--muted); font-size: 11px; }
+
+/* ============================================================
+   Buddies / Discover
+   ============================================================ */
+.buddy {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border-radius: 10px; padding: 12px 14px; margin: 10px 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.buddy .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--teal-500); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:700; object-fit: cover; }
+.buddy .grow { flex: 1; }
+.buddy .uname { font-family:"Nunito",sans-serif; font-weight:700; }
+.buddy .full { color: var(--muted); font-size: 12px; }
+
+/* ============================================================
+   Discover: tabs + bubble list
+   ============================================================ */
+.discover-tabs { display: flex; gap: 8px; margin: 8px 0 16px; }
+.discoverTab {
+  background: #fff !important; color: var(--teal-700) !important;
+  border: 1px solid #d4d8de;
+}
+.discoverTab.active { background: var(--teal-700) !important; color: #fff !important; border-color: var(--teal-700); }
+
+.bubbleRow {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff; border-radius: 10px; padding: 12px 14px; margin: 10px 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+.bubbleRow .grow { flex: 1; }
+.bubbleRow .uname { font-family: "Nunito", sans-serif; font-weight: 700; }
+.bubbleRow .full { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.cat-dot { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; background: var(--cat-community); }
+.cat-dot.sports { background: var(--cat-sports); }
+.cat-dot.community { background: var(--cat-community); }
+.cat-dot.public { background: var(--cat-public); }
+.cat-dot.transport { background: var(--cat-transport); }
+.cat-dot.special { background: var(--cat-special); }
+.home-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  background: var(--teal-50); color: var(--teal-700);
+  padding: 1px 6px; border-radius: 999px; margin-left: 6px; text-transform: uppercase;
+}
+
+/* Map marker popup */
+.bubble-popup { font-family: "DM Sans", sans-serif; text-align: center; min-width: 140px; }
+.bubble-popup .muted { color: var(--muted); font-size: 12px; }
+.bubble-popup button { margin-top: 6px; }
+
+/* ============================================================
+   Forms / cards
+   ============================================================ */
+.card {
+  background: #fff; border-radius: 12px; padding: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+}
+.card h2 { margin-top: 0; color: var(--teal-700); }
+input.w3-input:valid   { border-left: 4px solid var(--teal-500) !important; }
+input.w3-input:invalid { border-left: 4px solid #dc2626 !important; }
+.field-error { color: #c0392b; font-size: .85em; margin-top: 2px; display: block; }
+
+.brand-hero {
+  text-align: center; margin-bottom: 8px;
+  font-family: "Nunito", sans-serif; font-weight: 800; font-size: 28px; color: var(--teal-700);
+}
+
+/* ============================================================
+   Responsive: collapse the split view under 768px
+   ============================================================ */
+@media (max-width: 768px) {
+  .app-grid { grid-template-columns: 1fr; height: auto; }
+  #map { height: 40vh; }
+  #feedPanel { height: auto; border-left: none; border-top: 1px solid #e2e5ea; }
+}
+
+/* ============================================================
+   Guest Mode
+   ============================================================ */
+.guest-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, var(--teal-50) 0%, #d5f0e8 100%);
+  border-bottom: 1px solid #c8e6dc;
+  color: var(--ink);
+}
+.guest-banner > i { color: var(--teal-700); flex-shrink: 0; }
+.guest-banner div { flex: 1; }
+.guest-banner strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.guest-banner span { font-size: 12px; color: var(--muted); }
+.guest-banner-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.guest-stat { color: var(--muted); font-size: 13px; cursor: default; }
+
+@media (max-width: 768px) {
+  .guest-banner { flex-direction: column; text-align: center; }
+  .guest-banner-actions { justify-content: center; }
+}

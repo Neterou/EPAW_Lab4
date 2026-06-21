@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<link rel="icon" href="assets/upf.png">
+	<title>BubbleNet</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- jQuery -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+	<!-- W3.CSS (layout utilities) + Font Awesome 4.7 (icons) -->
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/5/w3.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+	<!-- Google Fonts: Nunito (display) + DM Sans (body) -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+
+	<!-- Leaflet (interactive bubble map) -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+	<!-- BubbleNet design system -->
+	<link rel="stylesheet" href="css/style.css">
+
+	<script>
+		window.App = window.App || {};
+		App.Errors = App.Errors || {};
+	</script>
+	<script src="js/LoginValidation.js"></script>
+	<script src="js/RegisterValidation.js"></script>
+	<script src="js/bubblemap.js"></script>
+
+	<script>
+		App.init = function () {
+			$.ajaxSetup({ cache: false });
+			$('#navigation').load("Menu");
+			$('#content').load("Content");
+			App.bindEvents();
+		};
+
+		// Reload the currently selected bubble feed (right panel of the home view).
+		App.reloadFeed = function () {
+			var id = $('#feedBubbleId').val();
+			if (id) $('#feedPanel').load("Feed?bubbleId=" + id);
+		};
+
+		App.bindEvents = function () {
+
+			// ---- Navigation menu ----
+			$(document).on("click", ".menu", function (event) {
+				event.preventDefault();
+				$('#content').load($(this).attr('href'), function () {
+					$('#navigation').load("Menu");
+				});
+			});
+
+			// ---- Any form -> AJAX submit (login / register) ----
+			$(document).on("submit", "form", function (event) {
+				if (event.isDefaultPrevented() || !this.checkValidity()) return;
+				event.preventDefault();
+				const form = this;
+				const data = new FormData(form);
+				$.ajax({
+					type: 'POST',
+					url: $(form).attr('action'),
+					data: data,
+					processData: false,
+					contentType: false
+				}).done(function (html) {
+					$("#content").html(html);
+					$('#navigation').load("Menu");
+				});
+			});
+
+			// ---- Admin: publish a post to the open bubble ----
+			$(document).on("click", "#postBtn", function (event) {
+				event.preventDefault();
+				const content = $("#composeContent").val();
+				if (!content || !content.trim()) return;
+				$.post("AddTweet", {
+					content: content,
+					type: $("#composeType").val(),
+					bubbleId: $("#feedBubbleId").val()
+				}, function () {
+					App.reloadFeed();
+				});
+			});
+
+			// ---- Delete own post ----
+			$(document).on("click", ".delTweet", function (event) {
+				event.preventDefault();
+				$.post("DelTweet", { id: $(this).closest(".post").data("id") }, function () {
+					App.reloadFeed();
+				});
+			});
+
+			// ---- Like / unlike ----
+			$(document).on("click", ".likeBtn", function (event) {
+				event.preventDefault();
+				const btn = $(this);
+				$.post("Like", { id: btn.closest(".post").data("id") }, function (res) {
+					btn.toggleClass("liked");
+					btn.find(".likeCount").text(res.count);
+				}, "json");
+			});
+
+			// ---- Toggle the reply drawer + load replies ----
+			$(document).on("click", ".replyToggle", function (event) {
+				event.preventDefault();
+				const post = $(this).closest(".post");
+				const drawer = post.find(".replyDrawer");
+				drawer.toggleClass("w3-hide");
+				if (!drawer.hasClass("w3-hide")) {
+					post.find(".commentList").load("Comments?tweetId=" + post.data("id"));
+				}
+			});
+
+			// ---- Submit a reply ----
+			$(document).on("click", ".commentBtn", function (event) {
+				event.preventDefault();
+				const post = $(this).closest(".post");
+				const box = post.find(".commentInput");
+				const text = box.val();
+				if (!text || !text.trim()) return;
+				$.post("AddComment", { tweetId: post.data("id"), content: text }, function () {
+					box.val("");
+					post.find(".commentList").load("Comments?tweetId=" + post.data("id"));
+					post.find(".commentCount").each(function () {
+						$(this).text(parseInt($(this).text() || "0", 10) + 1);
+					});
+				});
+			});
+
+			// ---- Owner: approve / reject a bubble join request ----
+			$(document).on("click", ".approveReq", function (event) {
+				event.preventDefault();
+				const row = $(this).closest(".reqRow");
+				$.post("ApproveRequest", { userId: row.data("user"), bubbleId: row.data("bubble") },
+					function () { $("#content").load("Requests"); });
+			});
+			$(document).on("click", ".rejectReq", function (event) {
+				event.preventDefault();
+				const row = $(this).closest(".reqRow");
+				$.post("RejectRequest", { userId: row.data("user"), bubbleId: row.data("bubble") },
+					function () { $("#content").load("Requests"); });
+			});
+
+			// ---- Open a user's public personal page (guests included) ----
+			$(document).on("click", ".userLink", function (event) {
+				event.preventDefault();
+				$('#content').load("PublicProfile?userId=" + $(this).data("user"), function () {
+					$('#navigation').load("Menu");
+				});
+			});
+
+			// ---- Follow / unfollow (Buddies / Discover) ----
+			$(document).on("click", ".followUser", function (event) {
+				event.preventDefault();
+				// Inside the Discover tab, refresh the tab body; otherwise the page.
+				const into = $("#discoverBody").length ? "#discoverBody" : "#content";
+				$.post("Follow", { id: $(this).closest(".buddy").data("id") }, function () {
+					$(into).load("NotFollowed");
+				});
+			});
+			$(document).on("click", ".unfollowUser", function (event) {
+				event.preventDefault();
+				const into = $("#discoverBody").length ? "#discoverBody" : "#content";
+				$.post("Unfollow", { id: $(this).closest(".buddy").data("id") }, function () {
+					$(into).load(into === "#discoverBody" ? "NotFollowed" : "Followed");
+				});
+			});
+
+			// ---- Discover tabs (People / Bubbles) ----
+			$(document).on("click", ".discoverTab", function (event) {
+				event.preventDefault();
+				$(".discoverTab").removeClass("active");
+				$(this).addClass("active");
+				$("#discoverBody").load($(this).attr("data-target"));
+			});
+
+			// ---- Join / leave a bubble (Discover › Bubbles list) ----
+			$(document).on("click", ".joinBubble", function (event) {
+				event.preventDefault();
+				$.post("JoinBubble", { bubbleId: $(this).closest(".bubbleRow").data("id") },
+					function () { $("#discoverBody").load("BubbleList"); });
+			});
+			$(document).on("click", ".leaveBubble", function (event) {
+				event.preventDefault();
+				$.post("LeaveBubble", { bubbleId: $(this).closest(".bubbleRow").data("id") },
+					function () { $("#discoverBody").load("BubbleList"); });
+			});
+
+			// ---- Join / leave from the feed header ----
+			$(document).on("click", ".joinFromFeed", function (event) {
+				event.preventDefault();
+				$.post("JoinBubble", { bubbleId: $("#feedBubbleId").val() },
+					function () { App.reloadFeed(); });
+			});
+			$(document).on("click", ".leaveFromFeed", function (event) {
+				event.preventDefault();
+				$.post("LeaveBubble", { bubbleId: $("#feedBubbleId").val() },
+					function () { App.reloadFeed(); });
+			});
+
+			// ---- Join / leave from a map marker popup ----
+			$(document).on("click", ".popupJoin", function (event) {
+				event.preventDefault();
+				var id = $(this).data("bubble");
+				$.post("JoinBubble", { bubbleId: id }, function () {
+					if (App._map) App._map.closePopup();
+					if ($("#feedBubbleId").val() == id) App.reloadFeed();
+				});
+			});
+			$(document).on("click", ".popupLeave", function (event) {
+				event.preventDefault();
+				var id = $(this).data("bubble");
+				$.post("LeaveBubble", { bubbleId: id }, function () {
+					if (App._map) App._map.closePopup();
+					if ($("#feedBubbleId").val() == id) App.reloadFeed();
+				});
+			});
+		};
+
+		App.stack = function () {
+			$("#stack").toggleClass("w3-show");
+		};
+
+		$(document).ready(function () {
+			App.init();
+		});
+	</script>
+</head>
+
+<body>
+
+	<!-- Navigation (fixed) -->
+	<div id="navigation"></div>
+
+	<!-- Single-page content area -->
+	<div id="content"></div>
+
+	<!-- Footer (fixed) -->
+	<footer id="footer">Pompeu Fabra University · BubbleNet · 2026</footer>
+
+</body>
+
+</html>
